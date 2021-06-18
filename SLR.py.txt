@@ -1,0 +1,88 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Apr 21 15:40:01 2021
+
+@author: Soumya PC
+"""
+#Importing the libraries
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+#loading the dataset
+wcat = pd.read_csv("wc-at.csv")
+wcat.columns
+
+#Visualization(histogram, boxplot, Scatterplot)
+plt.hist(wcat.Waist)
+plt.hist(wcat.AT)
+plt.boxplot(wcat.Waist)
+plt.boxplot(wcat.AT)
+plt.plot(wcat.Waist,wcat.AT,"ro");plt.xlabel("Waist");plt.ylabel("AT")
+
+#correlation coeffiecient(r) b/w y and x
+wcat.AT.corr(wcat.Waist)#0.81
+np.corrcoef(wcat.AT,wcat.Waist)
+
+#model building using statsmodels.formula.api
+import statsmodels.formula.api as smf
+model=smf.ols("AT~Waist",data=wcat).fit()
+model.params
+model.summary()
+#Here R-squared 0.67,Adj R squared=0667, P value=0.00
+#calculating the conf int for 95%
+model.conf_int(0.05)
+
+pred=model.predict(wcat)
+pred
+
+#scatter plot between actual and predicted values
+import matplotlib.pyplot as plt
+plt.scatter(x=wcat['Waist'],y=wcat['AT'],color='red');
+plt.plot(wcat['Waist'],pred,color='black');
+plt.xlabel('WAIST');plt.ylabel('AT')
+
+#RMSE
+from sklearn.metrics import mean_squared_error
+from math import sqrt
+rmse = sqrt(mean_squared_error(wcat.AT,pred))
+#Here rmse=32.76
+
+#As the predicted corr coeff(r) is 0.81, transforming the features for accuracy
+model1=smf.ols('AT~np.log(Waist)',data=wcat).fit()
+model1.params
+model1.summary()
+#Here R-squared=0.675, Adj R-squared=0.672, p=0.00
+model1.conf_int(0.05)
+pred1=model1.predict(wcat)
+pred1
+plt.scatter(x=wcat['Waist'],y=wcat['AT'],color='green');plt.plot(wcat['Waist'],pred1,color='blue');plt.xlabel('WAIST');plt.ylabel('AT')
+
+#Exponential transformation
+model2=smf.ols('np.log(AT)~Waist',data=wcat).fit()
+model2.params
+model2.summary()
+#Here R-squared=0.70, Adj R-squared=0.704, p is less than 0.05
+model2.conf_int(0.05)
+pred2=model2.predict(wcat)
+pred2
+plt.scatter(x=wcat['Waist'],y=wcat['AT'],color='green');plt.plot(wcat.Waist,np.exp(pred2),color='red');plt.xlabel('WAIST');plt.ylabel('AT')
+#Error
+resid= pred2-wcat.AT
+#to calculate the error for the entire data
+student_resid= model2.resid_pearson
+#Visualization of predicted and actual values
+plt.scatter(x=pred2,y=wcat.AT,color='green');plt.xlabel('pred2');plt.ylabel('AT')
+
+#Quadratic model
+wcat['Waist_sq']= wcat.Waist*wcat.Waist
+model3=smf.ols('AT~Waist+Waist_sq',data=wcat).fit()
+model3.params
+model3.summary()
+#Here R-squared=0.67,Adj R-squared=0.67,p is more than 0.05 for Waist_sq
+model3.conf_int(0.05)
+pred3= model3.predict(wcat)
+pred3
+plt.scatter(wcat.Waist,wcat.AT,color='red');plt.plot(wcat.Waist,pred3,color='blue')
+
+#Here we will consider the model having the highest R- squared value that is for exponential model. 
